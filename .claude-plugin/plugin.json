@@ -1,0 +1,5 @@
+{
+  "name": "slackbot",
+  "version": "0.1.0",
+  "description": "Slack 스레드 대화를 분석하여 액션 아이템을 추출하는 플러그인"
+}

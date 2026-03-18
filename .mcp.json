@@ -1,0 +1,7 @@
+{
+  "slack": {
+    "type": "stdio",
+    "command": "uv",
+    "args": ["--directory", "${CLAUDE_PLUGIN_ROOT}", "run", "python", "-m", "slack_mcp.server"]
+  }
+}
