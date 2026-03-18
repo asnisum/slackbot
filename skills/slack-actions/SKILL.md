@@ -4,7 +4,7 @@ description: >
   This skill should be used when the user provides a Slack thread URL,
   or asks "슬랙 스레드 정리", "액션 아이템 추출", "슬랙 요약",
   "thread summary", "action items from slack".
-version: 1.0.0
+version: 1.1.0
 ---
 
 # Slack 스레드 액션 아이템 추출
@@ -22,6 +22,15 @@ Slack URL에서 channel_id와 thread_ts를 추출합니다.
 파싱 규칙:
 - `CHANNEL_ID`: `/archives/` 뒤의 경로 세그먼트 (예: `C0123456789`)
 - `thread_ts`: `p` 뒤 숫자에서 **뒤에서 6자리 앞에 `.`을 삽입** (예: `p1234567890123456` → `1234567890.123456`)
+
+### 1.5. 기존 분석 확인
+
+`Read` 도구로 `~/.slackbot/{CHANNEL_ID}/{thread_ts}/metadata.json` 파일을 읽어봅니다.
+
+- **파일이 존재하면 → 업데이트 모드**:
+  - 기존 `README.md`를 `Read`로 읽고, `Write`로 `README.{오늘날짜 YYYY-MM-DD}.md`로 백업 저장합니다.
+  - 사용자에게 "기존 분석이 발견되었습니다. 업데이트 모드로 진행합니다." 안내합니다.
+- **파일이 없으면 → 신규 모드**: 기존과 동일하게 진행합니다.
 
 ### 2. 대화 로드
 
@@ -104,7 +113,27 @@ thread_ts: {thread_ts}
 
 - `Write` 도구를 사용하여 파일을 생성합니다.
 - 이미 파일이 존재하면 덮어씁니다.
-- 저장 후 두 파일의 경로를 사용자에게 알려줍니다.
+
+#### 6-3. 메타데이터 저장 (`metadata.json`)
+
+`Write` 도구로 `~/.slackbot/{CHANNEL_ID}/{thread_ts}/metadata.json`을 저장합니다:
+
+```json
+{
+  "last_analyzed_at": "2026-03-18T15:10:00+09:00",
+  "last_message_ts": "{스레드 마지막 메시지의 ts}",
+  "message_count": {전체 메시지 수}
+}
+```
+
+- `last_analyzed_at`: 현재 시각 (ISO 8601, KST)
+- `last_message_ts`: 스레드에서 가장 마지막 메시지의 `ts` 값
+- `message_count`: 전체 메시지 수
+
+#### 6-4. 저장 완료 안내
+
+- 저장 후 파일 경로를 사용자에게 알려줍니다.
+- 업데이트 모드였을 경우: "이전 분석은 `README.{날짜}.md`로 백업되었습니다." 안내합니다.
 
 ## 주의사항
 

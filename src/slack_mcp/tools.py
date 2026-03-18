@@ -42,6 +42,35 @@ def slack_get_thread_replies(channel: str, thread_ts: str) -> str:
 
 
 @mcp.tool()
+def slack_get_channel_messages(channel: str, oldest: str, latest: str) -> str:
+    """Get messages from a Slack channel within a time range.
+
+    Args:
+        channel: The channel ID (e.g., C0123456789)
+        oldest: Start of time range as Unix timestamp (e.g., 1710000000.000000)
+        latest: End of time range as Unix timestamp (e.g., 1710086399.999999)
+    """
+    try:
+        messages = []
+        cursor = None
+        while True:
+            resp = client.conversations_history(
+                channel=channel,
+                oldest=oldest,
+                latest=latest,
+                cursor=cursor,
+                limit=200,
+            )
+            messages.extend(resp["messages"])
+            cursor = resp.get("response_metadata", {}).get("next_cursor")
+            if not cursor:
+                break
+        return json.dumps(messages, ensure_ascii=False)
+    except SlackApiError as e:
+        return json.dumps({"error": str(e.response["error"])})
+
+
+@mcp.tool()
 def slack_get_user_profile(user: str) -> str:
     """Get a Slack user's profile information.
 

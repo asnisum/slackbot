@@ -10,7 +10,7 @@
     {
       "name": "slackbot",
       "description": "Slack 스레드 대화를 분석하여 액션 아이템을 추출하는 플러그인",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "chanmul",
         "email": "chanmul@users.noreply.github.com"
