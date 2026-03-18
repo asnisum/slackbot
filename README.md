@@ -77,14 +77,36 @@ API 스펙 변경에 따른 클라이언트 수정 범위 논의...
 | 2 | @김철수 | 클라이언트 마이그레이션 PR 생성 | 2026-03-25 | 높음 |
 ```
 
-## 버전 관리
+## 업데이트
+
+```bash
+claude plugins update slackbot
+```
+
+## 버전 관리 (컨트리뷰터용)
 
 이 프로젝트는 [Semantic Versioning](https://semver.org/)을 따릅니다. 변경 내역은 [CHANGELOG.md](CHANGELOG.md)를 참고하세요.
 
+버전은 3개 파일(`plugin.json`, `marketplace.json`, `pyproject.toml`)에서 관리되며, 동봉된 스크립트로 한번에 업데이트할 수 있습니다.
+
+### 릴리스 플로우
+
 ```bash
-# 플러그인 업데이트
-claude plugins update slackbot
+# 1. 버전 범프 (major | minor | patch)
+./scripts/bump-version.sh patch   # 예: 0.1.0 → 0.1.1
+
+# 2. CHANGELOG.md에 변경 내역 작성
+
+# 3. 커밋 & 태그
+git add -A
+git commit -m "chore: release v0.1.1"
+git tag v0.1.1
+
+# 4. 푸시 — GitHub Release 자동 생성
+git push origin main --tags
 ```
+
+`v*` 태그가 푸시되면 GitHub Actions가 CHANGELOG에서 해당 버전의 내용을 추출하여 GitHub Release를 자동으로 생성합니다.
 
 ## 요구사항
 
