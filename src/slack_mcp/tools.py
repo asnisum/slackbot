@@ -1,10 +1,14 @@
 import json
+import logging
 import os
+import time
 
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 
 from slack_mcp.app import mcp
+
+logger = logging.getLogger(__name__)
 
 _token = os.environ.get("SLACK_BOT_TOKEN")
 if not _token:
@@ -12,6 +16,23 @@ if not _token:
     print("ERROR: SLACK_BOT_TOKEN is not set. See docs/slack-app-setup.md", file=sys.stderr)
 
 client = WebClient(token=_token)
+
+_MAX_RETRIES = 3
+_DEFAULT_RETRY_AFTER = 5
+
+
+def _call_with_retry(fn, **kwargs):
+    """Call a Slack API method with rate-limit retry."""
+    for attempt in range(_MAX_RETRIES + 1):
+        try:
+            return fn(**kwargs)
+        except SlackApiError as e:
+            if e.response.get("error") == "ratelimited" and attempt < _MAX_RETRIES:
+                delay = int(e.response.headers.get("Retry-After", _DEFAULT_RETRY_AFTER))
+                logger.warning("Rate limited. Retrying in %ds (attempt %d/%d)", delay, attempt + 1, _MAX_RETRIES)
+                time.sleep(delay)
+            else:
+                raise
 
 
 @mcp.tool()
@@ -26,7 +47,8 @@ def slack_get_thread_replies(channel: str, thread_ts: str) -> str:
         messages = []
         cursor = None
         while True:
-            resp = client.conversations_replies(
+            resp = _call_with_retry(
+                client.conversations_replies,
                 channel=channel,
                 ts=thread_ts,
                 cursor=cursor,
@@ -54,7 +76,8 @@ def slack_get_channel_messages(channel: str, oldest: str, latest: str) -> str:
         messages = []
         cursor = None
         while True:
-            resp = client.conversations_history(
+            resp = _call_with_retry(
+                client.conversations_history,
                 channel=channel,
                 oldest=oldest,
                 latest=latest,
@@ -78,7 +101,7 @@ def slack_get_user_profile(user: str) -> str:
         user: The user ID (e.g., U0123456789)
     """
     try:
-        resp = client.users_info(user=user)
+        resp = _call_with_retry(client.users_info, user=user)
         profile = resp["user"]["profile"]
         return json.dumps(
             {
@@ -101,7 +124,7 @@ def slack_get_channel_info(channel: str) -> str:
         channel: The channel ID (e.g., C0123456789)
     """
     try:
-        resp = client.conversations_info(channel=channel)
+        resp = _call_with_retry(client.conversations_info, channel=channel)
         ch = resp["channel"]
         return json.dumps(
             {

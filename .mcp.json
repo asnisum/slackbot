@@ -1,7 +1,17 @@
 {
-  "slack": {
-    "type": "stdio",
-    "command": "uv",
-    "args": ["--directory", "${CLAUDE_PLUGIN_ROOT}", "run", "python", "-m", "slack_mcp.server"]
+  "mcpServers": {
+    "slack": {
+      "type": "stdio",
+      "command": "uv",
+      "args": [
+        "--directory",
+        "/Users/chanmul/Workspace/slackbot",
+        "run",
+        "python",
+        "-m",
+        "slack_mcp.server"
+      ],
+      "env": {}
+    }
   }
 }

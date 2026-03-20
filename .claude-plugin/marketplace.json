@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "slackbot-marketplace",
-  "description": "Slack thread action item extractor",
+  "description": "Slack channel/thread analyzer and work tracker",
   "owner": {
     "name": "chanmul",
     "email": "chanmul@users.noreply.github.com"
@@ -9,8 +9,8 @@
   "plugins": [
     {
       "name": "slackbot",
-      "description": "Slack 스레드 대화를 분석하여 액션 아이템을 추출하는 플러그인",
-      "version": "0.2.0",
+      "description": "Slack 채널/스레드 대화를 분석하고 업무 현황을 추적하는 플러그인",
+      "version": "0.3.0",
       "author": {
         "name": "chanmul",
         "email": "chanmul@users.noreply.github.com"
