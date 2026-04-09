@@ -49,16 +49,22 @@ model: sonnet
 
 `mcp__slack__slack_get_channel_info`를 호출하여 채널 이름을 확인합니다.
 
-### Step 4: 채널 메시지 수집
+### Step 4: 채널 메시지 수집 → 원본 즉시 저장
 
 `mcp__slack__slack_get_channel_messages`를 호출합니다:
 - `channel`: 채널 ID
 - `oldest`: Step 2에서 계산한 시작 timestamp
 - `latest`: Step 2에서 계산한 종료 timestamp
 
-메시지가 없으면: "해당 날짜에 대화 내용이 없습니다." 안내 후 종료합니다.
+**응답 JSON을 즉시 `raw_messages.json`에 저장합니다:**
+```python
+with open(f'{day_dir}/raw_messages.json', 'w') as f:
+    json.dump(messages, f, ensure_ascii=False, indent=2)
+```
 
-### Step 4.5: 스레드 수집 및 개별 저장
+메시지가 없으면: 빈 배열 `[]`로 저장 후 "해당 날짜에 대화 내용이 없습니다." 안내 후 종료합니다.
+
+### Step 4.5: 스레드 수집 → 원본 즉시 저장
 
 채널 메시지 중 `reply_count >= 1`인 메시지를 식별합니다.
 
@@ -66,11 +72,12 @@ model: sonnet
 - 각 스레드에 대해 `mcp__slack__slack_get_thread_replies`를 호출합니다:
   - `channel`: 채널 ID
   - `thread_ts`: 해당 메시지의 `ts`
+- **응답 JSON을 즉시 `{thread_ts}/raw_replies.json`에 저장합니다**
 - 스레드가 10개 이상이면 매 스레드 수집 시 "스레드 {current}/{total} 수집 중..." 진행 표시를 출력합니다.
 - 스레드 답글에 등장하는 사용자 ID도 수집하여 Step 5의 프로필 조회 대상에 포함합니다.
 
 **기존 스레드 확인:**
-- `~/.slackbot/{CHANNEL_ID}/{thread_ts}/metadata.json`이 이미 존재하면:
+- `~/.slackbot/{CHANNEL_ID}/{thread_ts}/raw_replies.json`이 이미 존재하면:
   - 기존 `README.md`를 `README.{오늘날짜}.md`로 백업
   - 새로 수집한 데이터로 덮어씁니다.
 
@@ -79,8 +86,9 @@ model: sonnet
 채널 메시지와 **스레드 답글 모두**에 등장하는 각 고유 사용자 ID에 대해 `mcp__slack__slack_get_user_profile`을 호출합니다.
 - 동일한 사용자 ID는 한 번만 조회합니다.
 
-### Step 6: 대화 분석 및 요약
+### Step 6: 로컬 원본 기반 분석 및 요약
 
+**로컬에 저장된 `raw_messages.json`, `raw_replies.json`을 읽어서** 분석합니다.
 수집한 대화를 분석하여 다음을 추출합니다:
 
 1. **주요 논의 토픽**: 대화를 토픽별로 분류하여 정리

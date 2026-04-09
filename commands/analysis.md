@@ -1,14 +1,13 @@
 ---
 description: "Slack 채널 업무 분석 (팀/개인/프로젝트)"
 argument-hint: "<채널ID> [기간] [분석유형]"
-allowed-tools: ["Read", "Write"]
+allowed-tools: ["mcp__slack__slack_get_channel_messages", "mcp__slack__slack_get_thread_replies", "mcp__slack__slack_get_user_profile", "mcp__slack__slack_get_channel_info", "Read", "Write", "Bash", "Glob"]
 model: sonnet
 ---
 
 # Slack 채널 업무 분석
 
-`~/.slackbot/`에 저장된 데이터를 읽어서 팀/개인/프로젝트별 업무를 분석합니다.
-**Slack API 호출 없음** — 로컬 저장 데이터만 사용합니다.
+분석 요청 시 **먼저 원본 데이터를 최신화**한 후, 로컬 원본 기반으로 분석합니다.
 
 ## 입력
 
@@ -33,12 +32,14 @@ model: sonnet
 
 `$ARGUMENTS`에서 채널 ID, 기간, 분석 유형을 추출합니다.
 
-### Step 2: 데이터 확인
+### Step 2: 원본 데이터 최신화
 
-`~/.slackbot/{CHANNEL_ID}/daily/` 디렉토리에서 해당 기간의 데이터를 확인합니다.
+분석 기간의 각 날짜에 대해 **MCP API로 메시지를 다시 fetch하여 원본을 최신화**합니다.
 
-- 각 날짜 디렉토리의 `metadata.json` 존재 여부 확인
-- 데이터가 있는 날짜 수 vs 전체 기간 날짜 수 비교
+1. 각 날짜의 `raw_messages.json`을 MCP 호출로 갱신
+2. 스레드가 있는 메시지의 `raw_replies.json`도 갱신
+3. 새로운 사용자 ID가 있으면 프로필 조회 후 캐시 업데이트
+4. 갱신된 원본으로 `conversation.md`, `README.md`, `metadata.json` 재생성
 
 **데이터 부족 시:**
 ```
@@ -48,13 +49,13 @@ model: sonnet
 - 데이터가 전혀 없으면 안내 후 종료
 - 데이터가 일부라도 있으면 가용 데이터로 분석 진행
 
-### Step 3: 데이터 로딩
+### Step 3: 로컬 원본 기반 데이터 로딩
 
-1. 각 날짜의 `daily/{YYYY-MM-DD}/metadata.json` 읽기
+1. 각 날짜의 `daily/{YYYY-MM-DD}/raw_messages.json` 읽기 (원본)
 2. 각 날짜의 `daily/{YYYY-MM-DD}/README.md` (요약) 읽기
-3. `metadata.json`의 `thread_ids`로 스레드 `{thread_ts}/README.md`도 읽기
+3. `metadata.json`의 `thread_ids`로 스레드 `{thread_ts}/raw_replies.json` 읽기
 4. 데이터가 많으면 (15일 이상) 요약(`README.md`)만 사용
-5. 데이터가 적으면 (14일 이하) 원본(`conversation.md`)까지 참고
+5. 데이터가 적으면 (14일 이하) 원본(`raw_messages.json`)까지 참고
 
 ### Step 4: 분석
 
